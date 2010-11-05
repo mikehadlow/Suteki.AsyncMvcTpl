@@ -9,38 +9,43 @@ namespace Suteki.AsyncMvcTpl.Spikes
     {
         public void CanComposeTasksWithLinq()
         {
-            var t1 = Task<int>.Factory.StartNew(() =>
-            {
-                Console.WriteLine("starting t1");
-                Thread.Sleep(1000);
-                return 1;
-            });
-
-            var result = from a in t1
-                         from b in Add2(a)
-                         from c in Add3(b)
+            var result = from a in CreateInt(2)
+                         from b in AddInts(a, 3)
+                         from c in AddInts(b, 4)
                          select c;
 
-            Console.WriteLine(result.Result);
+            Console.WriteLine("Completed with result {0}", result.Result);
         }
 
-        Task<int> Add2(int a)
+        public void ComposeWithContinueWith()
+        {
+            var result = CreateInt(2)
+                .ContinueWith(t1 => AddInts(t1.Result, 3)
+                    .ContinueWith(t2 => AddInts(t2.Result, 4))
+                    );
+
+            // result is the first task, how do you get the third task's result?
+        }
+
+        static Task<int> CreateInt(int a)
         {
             return Task<int>.Factory.StartNew(() =>
             {
-                Console.WriteLine("Starting Add2");
+                Console.WriteLine("Starting CreateInt   {0}", a);
                 Thread.Sleep(1000);
-                return a + 2;
+                Console.WriteLine("Completing CreateInt {0}", a);
+                return a;
             });
         }
 
-        Task<int> Add3(int b)
+        static Task<int> AddInts(int a, int b)
         {
             return Task<int>.Factory.StartNew(() =>
             {
-                Console.WriteLine("Starting Add3");
+                Console.WriteLine("Starting AddInts     {0} + {1}", a, b);
                 Thread.Sleep(1000);
-                return b + 3;
+                Console.WriteLine("Completing AddInts   {0} + {1}", a, b);
+                return a + b;
             });
         }
     }
